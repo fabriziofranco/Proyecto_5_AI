@@ -23,7 +23,7 @@ class LabDataSet(data.Dataset):
         self.height = height
         self.width = width
         
-        all_imgs = os.listdir(main_dir+'/color')
+        all_imgs = os.listdir(main_dir)
         self.total_imgs = natsorted(all_imgs)
 
         train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), test_size=test_size)
@@ -35,9 +35,8 @@ class LabDataSet(data.Dataset):
         return len(self.total_imgs)
 
     def __getitem__(self, idx):
-        img_loc = os.path.join(self.main_dir+'/color', self.total_imgs[idx])
+        img_loc = os.path.join(self.main_dir, self.total_imgs[idx])
         rgb = io.imread(img_loc)
-        rgb = transform.resize(rgb, (self.height, self.width), anti_aliasing=True)
         lab = color.rgb2lab(rgb).astype("float32")
         
         tensor_image_gray = self.gray_transform(lab)

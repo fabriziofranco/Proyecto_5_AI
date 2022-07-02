@@ -13,9 +13,10 @@ from natsort import natsorted
 from PIL import Image
 from PIL import ImageFile
 from skimage import io, color, transform
+import sys
 
 class LabDataSet(data.Dataset):
-    def __init__(self, main_dir, transform, test_size=0.1, height=128, width=128):
+    def __init__(self, main_dir, transform, train_size=5000, test_size=100, height=128, width=128):
         self.AB_scale = 128
         self.main_dir = main_dir
         self.transform = transform
@@ -26,7 +27,7 @@ class LabDataSet(data.Dataset):
         all_imgs = os.listdir(main_dir)
         self.total_imgs = natsorted(all_imgs)
 
-        train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), test_size=test_size)
+        train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), train_size=train_size, test_size=test_size)
         
         self.train_set = [self.__getitem__(x) for x in train_idx ]
         self.test_set = [self.__getitem__(x) for x in val_idx ]
@@ -44,4 +45,5 @@ class LabDataSet(data.Dataset):
 
         tensor_image_gray = tensor_image_gray[0,:,:] /100
         tensor_image_color = tensor_image_color[1:,:,:] / self.AB_scale
+
         return (tensor_image_gray, tensor_image_color, img_loc)

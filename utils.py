@@ -16,7 +16,7 @@ from skimage import io, color, transform
 import sys
 
 class LabDataSet(data.Dataset):
-    def __init__(self, main_dir, transform, train_size=5000, test_size=100, height=128, width=128):
+    def __init__(self, main_dir, transform, train_size=5000, test_size=100, height=128, width=128, seed=0):
         self.AB_scale = 128
         self.main_dir = main_dir
         self.transform = transform
@@ -27,7 +27,7 @@ class LabDataSet(data.Dataset):
         all_imgs = os.listdir(main_dir)
         self.total_imgs = natsorted(all_imgs)
 
-        train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), train_size=train_size, test_size=test_size)
+        train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), train_size=train_size, test_size=test_size, random_state=seed)
         
         self.train_set = [self.__getitem__(x) for x in train_idx ]
         self.test_set = [self.__getitem__(x) for x in val_idx ]
@@ -50,33 +50,48 @@ class LabDataSet(data.Dataset):
 
 def train(device, model, train_loader, test_loader, Epochs, loss_fn, optimizer, height, width):
     train_loss_avg = [] 
+    test_loss_avg = []
     for epoch in range(Epochs):
-      train_loss_avg.append(0)
-      num_batches = 0
+        train_loss_avg.append(0)
+        test_loss_avg.append(0)
+        num_batches = 0
     
-      for image_batch, image_batch_r, name_image in train_loader:
-          image_batch_r = image_batch_r.to(device)
-          
-          image_batch = torch.unsqueeze(image_batch, dim=1)
-          image_batch = image_batch.to(device)
+        for image_batch, image_batch_r, name_image in train_loader:
+            image_batch_r = image_batch_r.to(device)
+            
+            image_batch = torch.unsqueeze(image_batch, dim=1)
+            image_batch = image_batch.to(device)
 
-          image_batch_recon = model(image_batch)
-          loss = loss_fn(image_batch_recon, image_batch_r)
-          
-          optimizer.zero_grad()
-          loss.backward()
-          optimizer.step()
-          
-          train_loss_avg[-1] += loss.item()
-          num_batches += 1
-          
-      train_loss_avg[-1] /= num_batches
-      if epoch%5==0:
-        print('Epoch [%d / %d] average error: %f' % (epoch+1, Epochs, train_loss_avg[-1]))
-      if epoch%20==0 and epoch!=0:
-        plot_batch(device, test_loader, model, height=height, width=width, step = 16)
-        model.train()
-    return train_loss_avg
+            image_batch_recon = model(image_batch)
+            loss = loss_fn(image_batch_recon, image_batch_r)
+            
+            model.eval()
+            with torch.no_grad():
+                iterator = iter(test_loader)
+                elements = next(iterator)
+                image_batch_valid = torch.unsqueeze(elements[0], dim=1)
+                image_batch_valid = image_batch_valid.to(device)
+                image_batch_valid_r = model(image_batch_valid)
+                loss_valid = loss_fn(image_batch_valid_r, elements[1].to(device))
+                test_loss_avg[-1] += loss_valid.item()
+
+            model.train()
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            train_loss_avg[-1] += loss.item()
+            num_batches += 1
+            
+        train_loss_avg[-1] /= num_batches
+        test_loss_avg[-1] /= num_batches
+        if epoch%5==0 or epoch == (Epochs - 1):
+            print('Epoch [%d / %d] average train error: %f, average test error: %f' % (epoch+1, Epochs, train_loss_avg[-1],  test_loss_avg[-1]))
+        if (epoch%20==0 and epoch!=0) or epoch==(Epochs-1):
+            plot_batch(device, test_loader, model, height=height, width=width, step = 16)
+            model.train()
+    return train_loss_avg, test_loss_avg
+    
 
 
 def plot_batch(device, test_loader, model = None ,height=256, width=256, step=32):

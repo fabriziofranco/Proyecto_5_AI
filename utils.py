@@ -48,6 +48,35 @@ class LabDataSet(data.Dataset):
 
         return (tensor_image_gray, tensor_image_color, img_loc)
 
+def train(device, model, train_loader, test_loader, Epochs, loss_fn, optimizer, height, width):
+    train_loss_avg = [] 
+    for epoch in range(Epochs):
+      train_loss_avg.append(0)
+      num_batches = 0
+    
+      for image_batch, image_batch_r, name_image in train_loader:
+          image_batch_r = image_batch_r.to(device)
+          
+          image_batch = torch.unsqueeze(image_batch, dim=1)
+          image_batch = image_batch.to(device)
+
+          image_batch_recon = model(image_batch)
+          loss = loss_fn(image_batch_recon, image_batch_r)
+          
+          optimizer.zero_grad()
+          loss.backward()
+          optimizer.step()
+          
+          train_loss_avg[-1] += loss.item()
+          num_batches += 1
+          
+      train_loss_avg[-1] /= num_batches
+      if epoch%5==0:
+        print('Epoch [%d / %d] average error: %f' % (epoch+1, Epochs, train_loss_avg[-1]))
+      if epoch%20==0 and epoch!=0:
+        plot_batch(device, test_loader, model, height=height, width=width, step = 16)
+        model.train()
+    return train_loss_avg
 
 
 def plot_batch(device, test_loader, model = None ,height=256, width=256, step=32):

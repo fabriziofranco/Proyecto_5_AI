@@ -14,7 +14,7 @@ from PIL import Image
 from PIL import ImageFile
 from skimage import io, color, transform
 import sys
-
+import shutil
 class LabDataSet(data.Dataset):
     def __init__(self, main_dir, transform, train_size=5000, test_size=100, height=128, width=128, seed=0):
         self.AB_scale = 128
@@ -147,3 +147,79 @@ def plot_batch(device, test_loader, model = None ,height=256, width=256, step=32
             axis[1].imshow(rgb)
             axis[2].imshow(predictions[pos])
             plt.show()
+
+
+def save_results(device, loader, model=None, model_name="model_1", height=256, width=256, step=1, is_train=False):
+    AB_scale = 128
+    model.eval()
+    with torch.no_grad():
+        for image_batch, image_batch_r, name_image in loader:
+            image_batch2 = torch.unsqueeze(image_batch, dim=1)
+            predictions = []
+            resultado = model(image_batch2.to(device))
+
+            for pos in range(len(image_batch)):
+                L = (np.asarray(image_batch[pos])) * 100
+                A = (resultado[pos][0].detach().cpu().numpy()) *AB_scale
+                B = (resultado[pos][1].detach().cpu().numpy()) *AB_scale
+                datos = []
+                for i in range(L.shape[0]):
+                    for j in range(L.shape[1]):
+                        datos.append([L[i,j], A[i,j], B[i,j]])
+
+                datos = np.reshape(datos, (height,width,3))
+                rgb = color.lab2rgb(datos)
+                predictions.append(rgb)
+
+
+            for pos in range(len(image_batch)):
+                if pos%step!=0:
+                    continue
+                figure,axis = plt.subplots(1,3,figsize=(10,10))
+                axis[0].set_title("GRAY")
+                axis[1].set_title("COLOR")
+                axis[2].set_title("PREDICTED")
+
+                axis[0].axis("off")
+                axis[1].axis("off")
+                axis[2].axis("off")
+
+                L = (np.asarray(image_batch[pos])) * 100
+                A = np.asarray(image_batch_r[pos][0]) *AB_scale
+                B = np.asarray(image_batch_r[pos][1]) *AB_scale
+
+                datos = []
+                for i in range(L.shape[0]):
+                    for j in range(L.shape[1]):
+                        datos.append([L[i,j], A[i,j], B[i,j]])
+
+                datos = np.reshape(datos, (height,width,3))
+                rgb = color.lab2rgb(datos)
+                axis[0].imshow(L, cmap='gray')
+                axis[1].imshow(rgb)
+                axis[2].imshow(predictions[pos])
+                if is_train:
+                    figure.savefig(f"models/{model_name}/train_results/{pos}_elem.jpg", bbox_inches='tight')
+                    plt.close(figure)
+                else:
+                    figure.savefig(f"models/{model_name}/test_results/{pos}_elem.jpg", bbox_inches='tight')
+                    plt.close(figure)
+
+def save_model(device, model, model_name, train_loss_result, test_loss_result, train_loader, test_loader, height=256, width= 256):
+    if os.path.exists(f"models/{model_name}"):
+        shutil.rmtree(f"models/{model_name}", ignore_errors=False, onerror=None)
+    os.mkdir(os.path.join(f"models/{model_name}"))
+    os.mkdir(os.path.join(f"models/{model_name}/train_results"))
+    os.mkdir(os.path.join(f"models/{model_name}/test_results"))
+    torch.save(model.state_dict(), f"models/{model_name}/model.pt")
+    
+    textfile = open(f"models/{model_name}/train_loss.txt", "w")
+    for element in train_loss_result:
+        textfile.write(str(element) + "\n")
+
+    textfile = open(f"models/{model_name}/test_loss.txt", "w")
+    for element in test_loss_result:
+        textfile.write(str(element) + "\n")
+
+    save_results(device, train_loader,model, model_name, height, width, 1, True)
+    save_results(device, test_loader,model, model_name, height, width, 1, False)

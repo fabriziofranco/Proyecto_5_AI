@@ -149,10 +149,11 @@ def plot_batch(device, test_loader, model = None ,height=256, width=256, step=32
             plt.show()
 
 
-def save_results(device, loader, model=None, model_name="model_1", height=256, width=256, step=1, is_train=False):
+def save_results(device, loader, model=None, model_name="model_1", height=256, width=256, is_train=False, batch_size= 32):
     AB_scale = 128
     model.eval()
     with torch.no_grad():
+        iteracion = 0
         for image_batch, image_batch_r, name_image in loader:
             image_batch2 = torch.unsqueeze(image_batch, dim=1)
             predictions = []
@@ -173,8 +174,6 @@ def save_results(device, loader, model=None, model_name="model_1", height=256, w
 
 
             for pos in range(len(image_batch)):
-                if pos%step!=0:
-                    continue
                 figure,axis = plt.subplots(1,3,figsize=(10,10))
                 axis[0].set_title("GRAY")
                 axis[1].set_title("COLOR")
@@ -199,13 +198,14 @@ def save_results(device, loader, model=None, model_name="model_1", height=256, w
                 axis[1].imshow(rgb)
                 axis[2].imshow(predictions[pos])
                 if is_train:
-                    figure.savefig(f"models/{model_name}/train_results/{pos}_elem.jpg", bbox_inches='tight')
+                    figure.savefig(f"models/{model_name}/train_results/{(iteracion * batch_size)+pos}_elem.jpg", bbox_inches='tight')
                     plt.close(figure)
                 else:
-                    figure.savefig(f"models/{model_name}/test_results/{pos}_elem.jpg", bbox_inches='tight')
+                    figure.savefig(f"models/{model_name}/test_results/{(iteracion * batch_size)+pos}_elem.jpg", bbox_inches='tight')
                     plt.close(figure)
+            iteracion += 1
 
-def save_model(device, model, model_name, train_loss_result, test_loss_result, train_loader, test_loader, height=256, width= 256):
+def save_model(device, model, model_name, train_loss_result, test_loss_result, train_loader, test_loader, height=256, width= 256, batch_size=32):
     if os.path.exists(f"models/{model_name}"):
         shutil.rmtree(f"models/{model_name}", ignore_errors=False, onerror=None)
     os.mkdir(os.path.join(f"models/{model_name}"))
@@ -221,5 +221,5 @@ def save_model(device, model, model_name, train_loss_result, test_loss_result, t
     for element in test_loss_result:
         textfile.write(str(element) + "\n")
 
-    save_results(device, train_loader,model, model_name, height, width, 1, True)
-    save_results(device, test_loader,model, model_name, height, width, 1, False)
+    save_results(device, train_loader,model, model_name, height, width, True, batch_size)
+    save_results(device, test_loader,model, model_name, height, width, False, batch_size)

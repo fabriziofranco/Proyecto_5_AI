@@ -204,6 +204,8 @@ def save_results(device, loader, model=None, model_name="model_1", height=256, w
                     figure.savefig(f"models/{model_name}/test_results/{(iteracion * batch_size)+pos}_elem.jpg", bbox_inches='tight')
                     plt.close(figure)
             iteracion += 1
+            if iteracion*batch_size >= 2000:
+                return "Truncated to 2000 images"
 
 def save_model(device, model, model_name, train_loss_result, test_loss_result, train_loader, test_loader, height=256, width= 256, batch_size=32):
     if os.path.exists(f"models/{model_name}"):

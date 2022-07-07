@@ -78,19 +78,21 @@ def resize_all_images_and_colorized(data_path, data_dst, color="RGB"):
 def split_videos(data_path, filename):
     font_size = 22
     stroke_width = 2
+    font_color = 'white'
+    font_stroke = 'black'
 
     clip_color_original = VideoFileClip(data_path + filename + "_color.avi")
-    original_txt = TextClip("Original", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width) 
+    original_txt = TextClip("Original", fontsize = font_size, color = font_color, stroke_color= font_stroke, stroke_width=stroke_width) 
     original_txt = original_txt.set_pos('top').set_duration(clip_color_original.duration)
     clip_color_original = CompositeVideoClip([clip_color_original, original_txt]) 
 
     clip_color_predicted = VideoFileClip(data_path + filename + "_predicted.avi")
-    prediceted_txt = TextClip("Predicted", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width) 
+    prediceted_txt = TextClip("Predicted", fontsize = font_size, color = font_color, stroke_color= font_stroke, stroke_width=stroke_width) 
     prediceted_txt = prediceted_txt.set_pos('top').set_duration(clip_color_predicted.duration)
     clip_color_predicted = CompositeVideoClip([clip_color_predicted, prediceted_txt]) 
 
     clip_gray = VideoFileClip(data_path + filename + "_gray.avi")
-    grayscale_txt = TextClip("Grayscale", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width)
+    grayscale_txt = TextClip("Grayscale", fontsize = font_size, color = font_color, stroke_color= font_stroke, stroke_width=stroke_width)
     grayscale_txt = grayscale_txt.set_pos('top').set_duration(clip_gray.duration)
     clip_gray = CompositeVideoClip([clip_gray, grayscale_txt]) 
     
@@ -166,3 +168,5 @@ def colorize_video(model_name,video_path, filename, height=256, width=256, durat
     images_to_video(data_path=f"videos/{filename}/predictions/", data_dst=f"videos/{filename}/", video_name=filename+"_predicted.avi", frames = frames) #generar video en blanco y negro resize
     shutil.rmtree(f'videos/{filename}/tmp', ignore_errors=False, onerror=None)
     split_videos(data_path=f"videos/{filename}/", filename=filename)
+    shutil.rmtree(f'videos/{filename}/color', ignore_errors=False, onerror=None)
+    shutil.rmtree(f'videos/{filename}/gray', ignore_errors=False, onerror=None)

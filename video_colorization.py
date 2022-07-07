@@ -77,19 +77,20 @@ def resize_all_images_and_colorized(data_path, data_dst, color="RGB"):
 
 def split_videos(data_path, filename):
     font_size = 22
+    stroke_width = 2
 
     clip_color_original = VideoFileClip(data_path + filename + "_color.avi")
-    original_txt = TextClip("Original", fontsize = font_size, color = 'yellow') 
+    original_txt = TextClip("Original", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width) 
     original_txt = original_txt.set_pos('top').set_duration(clip_color_original.duration)
     clip_color_original = CompositeVideoClip([clip_color_original, original_txt]) 
 
     clip_color_predicted = VideoFileClip(data_path + filename + "_predicted.avi")
-    prediceted_txt = TextClip("Predicted", fontsize = font_size, color = 'yellow') 
+    prediceted_txt = TextClip("Predicted", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width) 
     prediceted_txt = prediceted_txt.set_pos('top').set_duration(clip_color_predicted.duration)
     clip_color_predicted = CompositeVideoClip([clip_color_predicted, prediceted_txt]) 
 
     clip_gray = VideoFileClip(data_path + filename + "_gray.avi")
-    grayscale_txt = TextClip("Grayscale", fontsize = font_size, color = 'yellow')
+    grayscale_txt = TextClip("Grayscale", fontsize = font_size, color = 'white', stroke_color="black", stroke_width=stroke_width)
     grayscale_txt = grayscale_txt.set_pos('top').set_duration(clip_gray.duration)
     clip_gray = CompositeVideoClip([clip_gray, grayscale_txt]) 
     

@@ -54,8 +54,8 @@ class Decoder(nn.Module):
     layer_2_extended = F.upsample(layer_2, scale_factor=2, mode='nearest')
     layer_3 = F.relu(self.conv3(layer_2_extended))
     layer_3_extended = F.upsample(layer_3, scale_factor=2, mode='nearest')     
-    layer_4 = F.relu(self.conv4(layer_3_extended))
-    return F.tanh(layer_4)
+    layer_4 = F.tanh(self.conv4(layer_3_extended))
+    return layer_4
 
 class Autoencoder(nn.Module):
    def __init__(self):

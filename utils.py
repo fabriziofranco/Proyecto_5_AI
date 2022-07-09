@@ -28,6 +28,7 @@ class LabDataSet(data.Dataset):
         self.total_imgs = natsorted(all_imgs)
 
         train_idx, val_idx = train_test_split(list(range(len(self.total_imgs))), train_size=train_size, test_size=test_size, random_state=seed)
+        self.train_idx = train_idx
         
         self.train_set = [self.__getitem__(x) for x in train_idx ]
         self.test_set = [self.__getitem__(x) for x in val_idx ]
